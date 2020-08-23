@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+//import 'package:flutter/services.dart';
 import 'package:personalExpApp/widgets/newTransaction.dart';
 import './widgets/transaction_List.dart';
 import './models/transactions.dart';
 import './widgets/chart.dart';
 
-void main() => (runApp(MyApp()));
+void main() {
+  // WidgetsFlutterBinding.ensureInitialized();
+  // SystemChrome.setPreferredOrientations(
+  //     [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -80,29 +86,73 @@ class _MyHomePageState extends State<MyHomePage> {
   void _startNewTransaction() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (_) {
         return NewTransaction(_addNewTransaction);
       },
     );
   }
 
+  bool _showChart = false;
+
   @override
   Widget build(BuildContext context) {
+    final _isLandScape = MediaQuery.of(context).orientation == Orientation.landscape;    
+
+    final appBar = AppBar(
+      title: Text('Track Expenses'),
+      actions: <Widget>[
+        IconButton(icon: Icon(Icons.add), onPressed: _startNewTransaction),
+      ],
+    );
+
+    final _listViewWidget = Container(
+                height: (MediaQuery.of(context).size.height -
+                        appBar.preferredSize.height -
+                        MediaQuery.of(context).padding.top) *
+                    0.7,
+                child: TransactionList(_tranasactions, _deleteTransaction));
+
     return Scaffold(
       //resizeToAvoidBottomPadding: false, //Remove at the end
-      appBar: AppBar(
-        title: Text('Track Expenses'),
-        actions: <Widget>[
-          IconButton(icon: Icon(Icons.add), onPressed: _startNewTransaction),
-        ],
-      ),
+      appBar: appBar,
       body: SingleChildScrollView(
         child: Column(
           // mainAxisAlignment: MainAxisAlignment.spaceAround,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Chart(_recentTransactions),
-            TransactionList(_tranasactions, _deleteTransaction),
+            if (_isLandScape) Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Show Chart'),
+                Switch.adaptive(
+                    value: _showChart,
+                    onChanged: (value) {
+                      setState(() {
+                        _showChart = value;
+                      });
+                      
+                    })
+              ],
+            ),
+            if(!_isLandScape)
+              Container(
+                height: (MediaQuery.of(context).size.height -
+                        appBar.preferredSize.height -
+                        MediaQuery.of(context).padding.top) *
+                    0.3,
+                child: Chart(_recentTransactions)),
+            if (!_isLandScape) _listViewWidget,
+
+            if(_isLandScape)
+            _showChart == true ?
+            Container(
+                height: (MediaQuery.of(context).size.height -
+                        appBar.preferredSize.height -
+                        MediaQuery.of(context).padding.top) *
+                    0.7,
+                child: Chart(_recentTransactions)) :
+            _listViewWidget,
           ],
         ),
       ),
